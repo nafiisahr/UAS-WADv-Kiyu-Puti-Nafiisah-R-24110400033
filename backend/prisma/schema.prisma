@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  tenant_admin
+}
+
+enum TicketStatus {
+  waiting
+  called
+  done
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(user)
+
+  tickets   Ticket[]
+
+  createdAt DateTime @default(now())
+}
+
+model Tenant {
+  id            Int      @id @default(autoincrement())
+  name          String
+  location      String?
+  image         String?
+  currentNumber Int      @default(0)
+  estimatedTime Int?     // estimasi pelayanan per orang (menit)
+
+  tickets       Ticket[]
+
+  createdAt     DateTime @default(now())
+}
+
+model Ticket {
+  id          Int          @id @default(autoincrement())
+  queueNumber Int
+  status      TicketStatus @default(waiting)
+
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tenantId    Int
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime     @default(now())
+}
